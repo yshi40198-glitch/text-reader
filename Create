@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 便携版自带的 Python 运行时（体积大，不应提交到源码仓库）
+python/
+
+# 测试与输出
+test.pdf
+outputs/
+*.log
+
+# 系统
+.DS_Store
+Thumbs.db

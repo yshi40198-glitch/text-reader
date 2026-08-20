@@ -1,57 +1,59 @@
-# 薇阅 · 文字朗读工具（Weiyue Text Reader）
+# Weiyue · Text Reader（薇阅 · 文字朗读工具）
 
-> 让文字“听起来”——一款温暖、开箱即用的中文文字朗读工具（Windows）。
+> Read with your ears — a warm, ready-to-use text-to-speech reader for Windows.
 
-**薇阅（Weiyue）** 打开 PDF / Word / EPUB / TXT，一键让电脑把文字读出来。
-无论是通勤路上的小说、深夜里的工作资料，还是练习英语听力的文章，
-薇阅都能用自然、温暖的声音陪着你。
+**English** | [中文文档](README.zh-CN.md)
 
----
-
-## 🎯 它真的能帮到你
-
-| 场景 | 怎么用 |
-|------|--------|
-| 📖 **小说 / 电子书听书** | 打开 EPUB / PDF / TXT，点「从头朗读」，闭眼也能“读”完一整本书；1.5x 倍速正好跟上剧情 |
-| 🎧 **中英文朗读 · 听力学习** | 选英语声线（Aria / Guy / Jenny / Sonia）朗读英文文章；0.5x 慢速精听，逐句跟读练发音 |
-| 💼 **商务资料 / 会议材料** | 打开 Word / PDF 简报，2x 倍速快速过一遍；听到重点点「打标记」，随时从标记处继续 |
-| 🌙 **睡前放松** | 定时关闭 15 / 30 / 60 / 90 分钟，到点自动停，听着听着自然入睡 |
-| ✍️ **护眼 · 解放双手** | 屏幕看累了，让文字变成声音，边做家务边听资料 |
+Weiyue reads PDF, Word, EPUB and TXT out loud in natural voices. Whether it's
+a novel on your commute, work documents late at night, or English articles
+for listening practice, Weiyue keeps you company with a warm, human-like voice.
 
 ---
 
-## ✨ n2.5 版本亮点
+## 🎯 What it does for you
 
-- 🌅 **朝阳暖色浮雕界面**：奶油白 + 杏橙点缀，按钮立体浮雕，疏密有致、舒适耐看
-- 🌍 **中英双语界面**：右上角「EN / 中」一键切换，外国朋友也能用
-- 🪶 **品牌标题**：羽毛徽章 + 「薇阅」
-- ⚡ **打开文件不卡顿**：后台读取，大文件也不会冻结界面
-- 🖱️ **桌面快捷方式**：一键创建，双击图标直接打开
-- 🔊 60+ AI 声线（中文、英语、粤语、台湾腔等），断网自动回退本地语音
-
-完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
-
----
-
-## ✨ 功能一览
-
-- 打开 PDF / Word（.docx / .doc）/ txt / md / EPUB / HTML 朗读
-- 从头朗读 / 从光标朗读 / 朗读选中 / 从标记朗读
-- 倍速 0.5x ~ 3x 快选，朗读中切换平滑生效
-- 音量 0~100%、定时关闭（15 / 30 / 60 / 90 分钟）
-- 打标记：听到哪记到哪，随时从标记继续
-- 导出音频：AI 语音 MP3 / 本地语音 WAV（失败自动重试）
-- 进度条 + 正在朗读段落高亮、系统托盘、桌面快捷方式
+| Use case | How |
+|----------|-----|
+| 📖 **Audiobook / e-book listening** | Open EPUB / PDF / TXT, press "Read from Start" and finish whole books with your eyes closed; 1.5x is perfect for stories |
+| 🎧 **Chinese & English listening practice** | Pick an English voice (Aria / Guy / Jenny / Sonia), slow down to 0.5x and follow along for pronunciation |
+| 💼 **Business docs & meeting materials** | Skim Word / PDF briefs at 2x; mark key points and resume from the mark anytime |
+| 🌙 **Sleep timer** | Auto-stop after 15 / 30 / 60 / 90 minutes — drift off while listening |
+| ✍️ **Screen-free reading** | Give your eyes a break: turn text into voice and listen while doing chores |
 
 ---
 
-## 🚀 快速开始
+## ✨ n2.5 Highlights
 
-### 电脑版（推荐直接下载发行版）
-去右侧 **Releases** 下载最新压缩包，解压后双击「启动朗读工具.bat」即可，
-无需安装 Python，开箱即用。
+- 🌅 **Sunrise warm UI**: cream background, apricot-orange accents, embossed buttons
+- 🌍 **Bilingual interface**: one-click switch between 中文 and English
+- 🪶 **Brand title**: feather badge + "Weiyue"
+- ⚡ **Non-blocking file loading**: large documents no longer freeze the app
+- 🖱️ **One-click desktop shortcut** (fixed)
+- 🔊 **60+ AI voices** (Mandarin, English, Cantonese, Taiwanese...), auto fallback to local voice when offline
 
-### 从源码运行（开发者）
+Full history: [CHANGELOG.md](CHANGELOG.md)
+
+---
+
+## ✨ Features
+
+- Open PDF / Word (.docx / .doc) / txt / md / EPUB / HTML and read aloud
+- Read from start / from cursor / selection / from mark
+- Speed presets 0.5x ~ 3x, smooth switching while reading
+- Volume 0~100%, sleep timer (15 / 30 / 60 / 90 min)
+- Bookmark: mark where you are, resume anytime
+- Export audio: AI voice to MP3 / local voice to WAV (auto retry)
+- Progress bar + reading-paragraph highlight, system tray, desktop shortcut
+
+---
+
+## 🚀 Quick Start
+
+### End users (recommended)
+Download the latest zip from **Releases**, unzip it, then double-click
+**「启动朗读工具.bat」** — no Python installation needed.
+
+### Developers (from source)
 ```bash
 pip install -r requirements.txt
 python textreader_app.py
@@ -59,27 +61,28 @@ python textreader_app.py
 
 ---
 
-## 🧩 技术说明
+## 🧩 Tech Stack
 
-- 界面：Python Tkinter（朝阳暖色 · 浮雕质感）
-- AI 语音：edge-tts（神经网络语音，需联网，60+ 声线）
-- 本地兜底：Windows SAPI 系统语音（离线可用，断网不中断）
-- 文本提取：PyMuPDF / python-docx / HTMLParser
-
----
-
-## 🤝 参与贡献
-
-非常欢迎！无论是报 Bug、提功能建议，还是直接提交代码改进，都感谢你的参与。
-
-1. 有想法或遇到问题 → 提 [Issue](../../issues)
-2. 想改代码 → Fork 仓库，改好提交 [Pull Request](../../pulls)
-3. 觉得好用 → 点个 Star ⭐，让更多人看到
-
-详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- UI: Python Tkinter (warm sunrise theme, embossed buttons)
+- AI voice: edge-tts (neural voices, requires internet)
+- Offline fallback: Windows SAPI system voices
+- Text extraction: PyMuPDF / python-docx / HTMLParser
 
 ---
 
-## 📄 许可证
+## 🤝 Contributing
 
-本项目使用 [MIT License](LICENSE)，可自由使用、修改、分发。
+Contributions of all kinds are welcome — bug reports, feature ideas, or pull
+requests that make Weiyue better.
+
+1. Found a problem or have an idea? Open an [Issue](../../issues)
+2. Want to improve the code? Fork the repo and submit a [Pull Request](../../pulls)
+3. Like it? Give it a ⭐ so more people can find it
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+## 📄 License
+
+[MIT License](LICENSE) — free to use, modify and distribute.

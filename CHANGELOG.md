@@ -1,71 +1,72 @@
-# 更新日志（Changelog）
+# Changelog / 更新日志
 
-所有重要改动都会记录在这里。版本从 n2.1 开始编号。
+All notable changes are recorded here. Versions start from n2.1.
+所有重要改动都会记录在这里，版本从 n2.1 开始编号。
 
 ---
 
 ## [n2.5] - 2026-08
 
+**Theme: prettier, smoother, and usable by more people.**
 **主题：更美、更顺、更多人能用。**
 
-### ✨ 新增
-- **中英双语界面**：右上角「EN / 中」一键切换，按钮、菜单、提示全部双语
-- **品牌升级**：羽毛徽章 + 「薇阅」大标题，「文字朗读工具」作为说明小字
-- **朝阳暖色浮雕界面**：奶油白 + 杏橙，按钮立体浮雕，疏密有致的排版
-- **后台读取文件**：打开大文档不再卡死界面，先显示「正在读取…」
-- **桌面快捷方式一键创建**（修复了此前无法安装快捷方式的问题）
+### Added / 新增
+- Bilingual interface (中文 / EN) with one-click switch / 中英双语界面，右上角一键切换
+- Brand title: feather badge + "Weiyue" / 羽毛徽章 + 「薇阅」品牌标题
+- Sunrise warm UI with embossed buttons / 朝阳暖色浮雕界面，按钮立体浮雕
+- Background file loading — large docs no longer freeze / 后台读取文件，大文档不再卡死
+- One-click desktop shortcut (fixed) / 桌面快捷方式一键创建（已修复）
 
-### 🔧 改进
-- 布局重构：朗读按钮等宽成组；「语音来源 + 声线」合并成一张卡片
-- 速度滑杆改为快选按钮（0.5x / 1x / 1.5x / 2x / 3x），界面更简洁
-- 英文界面按钮自动加宽，英文文字完整显示
-- 朗读中切换倍速更流畅（AI 语音平滑变速，不打断当前段落）
+### Changed / 改进
+- Buttons grouped and equal-width; voice source + voice merged into one card / 朗读按钮等宽成组，「语音来源 + 声线」合并成一张卡片
+- Speed slider replaced by quick presets (0.5x / 1x / 1.5x / 2x / 3x) / 速度滑杆改为快选按钮
+- English buttons auto-widen so text is never cut off / 英文界面按钮自动加宽，文字完整显示
+- Smoother speed changes while reading (AI voice) / 朗读中切换倍速更流畅
 
-### 🐛 修复
-- 修复桌面快捷方式脚本的编码与解析错误
-- 修复界面构建异常导致的白屏问题
-- 修复英文界面按钮文字显示不全
+### Fixed / 修复
+- Desktop shortcut script encoding / 桌面快捷方式脚本编码与解析错误
+- White-screen UI build issue / 界面构建异常导致的白屏问题
+- English button text truncation / 英文按钮文字显示不全
 
-### 🎁 对使用者的帮助
-- **听书更舒服**：朝阳暖色界面长时间看不累，睡前定时关闭更省心
-- **学英语更方便**：中英双语界面 + 4 个英语声线，慢速精听、跟读练耳
-- **办公更高效**：商务资料、会议材料 2x 倍速快速过，打标记随时续读
+### Benefits / 对使用者的帮助
+- Warm comfortable UI for long listening sessions / 暖色界面长时间听书不累
+- English voices for listening & pronunciation practice / 英语声线练习听力、跟读发音
+- Faster document loading / 打开大文件不再卡顿
 
 ---
 
 ## [n2.4] - 2026-08
 
-### ✨ 新增
-- 打标记 / 从标记朗读：听到哪记到哪，随时从标记处继续
-- 阅读中切换倍速平滑生效（AI 语音不打断当前段落）
-- 导出音频按钮样式与整体界面统一
+### Added / 新增
+- Bookmark: mark position and resume from mark / 打标记，从标记处继续朗读
+- Smooth speed switching while reading / 阅读中切换倍速平滑生效
 
-### 🔧 改进
-- 倍速上限调整为 3x（0.5x ~ 3x，两级变速真实可感）
-- 工具名精简、字体缩小，界面更清爽
-- 音量 100% 为真实满音量
+### Changed / 改进
+- Speed range adjusted to 0.5x ~ 3x with noticeable difference / 倍速 0.5x~3x，真实可感
+- Cleaner title & smaller font / 工具名精简、字体缩小
+- 100% volume is real full volume / 音量 100% 为真实满音量
 
 ---
 
 ## [n2.2] - 2026-08
 
-### ✨ 新增
-- 定时关闭（15 / 30 / 60 / 90 分钟）
-- 音量调节滑杆
-- 音频输出稳定、全面，AI 语音导出 MP3、本地语音导出 WAV
+### Added / 新增
+- Sleep timer (15 / 30 / 60 / 90 min) / 定时关闭
+- Volume control / 音量调节
+- Stable audio export (AI → MP3, local → WAV) / 稳定的音频输出
 
-### 🔧 改进
-- 界面改为极简风格，最多两种颜色，符合极简主义美学
-- 修复音量太小的问题（100% 即满音量）
+### Changed / 改进
+- Minimalist UI with at most two colors / 极简界面，最多两种颜色
+- Fixed volume being too quiet / 修复音量过小
 
 ---
 
 ## [n2.1] - 2026-08
 
-### ✨ 新增
-- 朝阳浮雕风格雏形：整体工业设计、简单色为主
-- 倍速 0.5x ~ 4x（后调整为 0.5x ~ 3x）
+### Added / 新增
+- Speed presets 0.5x ~ 4x (later 0.5x ~ 3x) / 倍速预设
+- First pass of industrial design / 整体工业设计
 
-### 🔧 改进
-- 倍速切换实际可听出明显差异
-- 界面排版精简，去掉冗余元素
+### Changed / 改进
+- Noticeable speed differences / 倍速差异明显可感
+- Cleaner layout, removed redundant elements / 布局精简，去掉冗余

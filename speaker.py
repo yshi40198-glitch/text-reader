@@ -22,6 +22,43 @@ import time
 from extract import clean_for_speech, split_chunks
 
 
+# ---------- 多语言消息 ----------
+SPK_MSG = {
+    'zh': {
+        'fallback': 'AI 网络语音中断，自动改用本地语音继续…',
+        'net_fail': '网络语音失败（请检查网络），已停止',
+        'paused': '已暂停（第 %d/%d 段）',
+        'reading': '正在朗读第 %d/%d 段',
+        'done': '朗读完成',
+        'empty': '没有可朗读的内容',
+        'unavailable': 'AI 语音组件不可用，请用本地语音',
+        'preparing': '正在准备第 %d/%d 段…',
+        'reading_local': '正在朗读第 %d/%d 段（本地语音）',
+        'unknown_voice': '未知语音',
+        'export_mp3': 'AI 网络语音已导出为 MP3',
+        'export_fail': 'AI 导出失败（检查网络）：%s',
+        'export_wav': '本地语音已导出为 WAV',
+        'export_wav_fail': '本地语音导出失败：%s',
+    },
+    'en': {
+        'fallback': 'AI network voice lost, continuing with local voice...',
+        'net_fail': 'Network voice failed (check internet), stopped',
+        'paused': 'Paused (segment %d/%d)',
+        'reading': 'Reading segment %d/%d',
+        'done': 'Finished reading',
+        'empty': 'Nothing to read',
+        'unavailable': 'AI voice component unavailable, use local voice',
+        'preparing': 'Preparing segment %d/%d...',
+        'reading_local': 'Reading segment %d/%d (local voice)',
+        'unknown_voice': 'Unknown voice',
+        'export_mp3': 'AI voice exported to MP3',
+        'export_fail': 'AI export failed (check internet): %s',
+        'export_wav': 'Local voice exported to WAV',
+        'export_wav_fail': 'Local voice export failed: %s',
+    },
+}
+
+
 # ---------- 通用工具 ----------
 
 def _split_sentences(text):
@@ -280,6 +317,7 @@ class NeuralSpeaker:
     """AI 神经网络语音引擎：逐段合成 MP3，MCI 播放，支持进度/暂停/停止。"""
 
     def __init__(self):
+        self._lang = 'zh'
         self._voice = 'zh-CN-XiaoxiaoNeural'
         self._rate_mult = 1.0
         self._play_rate = 1.0
@@ -308,6 +346,13 @@ class NeuralSpeaker:
             return True
         except Exception:
             return False
+
+    def _T(self, key, *args):
+        msg = SPK_MSG.get(self._lang, SPK_MSG['zh']).get(key, key)
+        return msg % args if args else msg
+
+    def set_language(self, lang):
+        self._lang = 'en' if lang == 'en' else 'zh'
 
     # ---------- 声线 ----------
     def list_voices(self):
@@ -432,17 +477,17 @@ class NeuralSpeaker:
             import edge_tts
         except Exception:
             if on_state:
-                on_state('AI 语音组件不可用，请用本地语音')
+                on_state(self._T('unavailable'))
             return
         total = len(chunks)
         if total == 0 or offset >= total:
             if on_state:
-                on_state('没有可朗读的内容')
+                on_state(self._T('empty'))
             return
         if on_progress:
             on_progress(0, total)
         if on_state:
-            on_state('正在准备第 %d/%d 段…' % (offset + 1, total))
+            on_state(self._T('preparing', offset + 1, total))
         tmp = tempfile.mkdtemp(prefix='neu_tts_')
         ready = queue.Queue(maxsize=4)
         stop = self._stop_evt
@@ -505,11 +550,11 @@ class NeuralSpeaker:
                     if fb is not None and i > 1:
                         handed_off = True
                         if on_state:
-                            on_state('AI 网络语音中断，自动改用本地语音继续…')
+                            on_state(self._T('fallback'))
                         fb(chunks[i - 1:], on_progress, on_state)
                     else:
                         if on_state:
-                            on_state('网络语音失败（请检查网络），已停止')
+                            on_state(self._T('net_fail'))
                     break
                 if ver != self._rate_ver:
                     # 朗读中倍速变了：不打断当前段落，把这一段按新倍速重合成后再读
@@ -524,16 +569,16 @@ class NeuralSpeaker:
                         if fb is not None and i > 1:
                             handed_off = True
                             if on_state:
-                                on_state('AI 网络语音中断，自动改用本地语音继续…')
+                                on_state(self._T('fallback'))
                             fb(chunks[i - 1:], on_progress, on_state)
                         else:
                             if on_state:
-                                on_state('网络语音失败（请检查网络），已停止')
+                                on_state(self._T('net_fail'))
                         break
                     start_worker(newgen, i + 1)
                 if self._paused_evt.is_set():
                     if on_state:
-                        on_state('已暂停（第 %d/%d 段）' % (max(1, i - 1), total))
+                        on_state(self._T('paused', max(1, i - 1), total))
                     while self._paused_evt.is_set():
                         if self._stop_evt.is_set():
                             break
@@ -545,7 +590,7 @@ class NeuralSpeaker:
                 if on_progress:
                     on_progress(i, total)
                 if on_state:
-                    on_state('正在朗读第 %d/%d 段' % (i, total))
+                    on_state(self._T('reading', i, total))
                 with self._lock:
                     self._active_idx = i
                 self._play_file(path)
@@ -554,7 +599,7 @@ class NeuralSpeaker:
                 self._active_chunks = None
             shutil.rmtree(tmp, ignore_errors=True)
             if on_state and not self._stop_evt.is_set() and not handed_off:
-                on_state('朗读完成')
+                on_state(self._T('done'))
             self._paused_evt.clear()
 
     def _play_file(self, path):
@@ -679,6 +724,7 @@ class SapiSpeaker:
     """Windows 原生 SAPI 引擎：逻辑沿用 v8（线程内 COM + 泵消息防死锁）。"""
 
     def __init__(self):
+        self._lang = 'zh'
         self._voice = None
         self._rate = 0
         self._volume = 100
@@ -709,7 +755,14 @@ class SapiSpeaker:
             except Exception:
                 pass
             self._select_zh_voice()
-        return self._voice
+            return self._voice
+
+    def _T(self, key, *args):
+        msg = SPK_MSG.get(self._lang, SPK_MSG['zh']).get(key, key)
+        return msg % args if args else msg
+
+    def set_language(self, lang):
+        self._lang = 'en' if lang == 'en' else 'zh'
 
     def _select_zh_voice(self):
         try:
@@ -736,7 +789,7 @@ class SapiSpeaker:
                     try:
                         name = str(tok.Id)
                     except Exception:
-                        name = '未知语音'
+                        name = self._T('unknown_voice')
                 out.append({'id': tok.Id, 'name': name})
             return out
         except Exception:
@@ -885,7 +938,7 @@ class SapiSpeaker:
         total = len(chunks)
         if total == 0 or offset >= total:
             if on_state:
-                on_state('没有可朗读的内容')
+                on_state(self._T('empty'))
             return
         if on_progress:
             on_progress(0, total)
@@ -902,7 +955,7 @@ class SapiSpeaker:
             if on_progress:
                 on_progress(i - 1, total)
             if on_state:
-                on_state('正在朗读第 %d/%d 段（本地语音）' % (i, total))
+                on_state(self._T('reading_local', i, total))
             with self._lock:
                 self._active_idx = i
             for sent in _split_sentences(chunk):
@@ -914,7 +967,7 @@ class SapiSpeaker:
             if on_progress:
                 on_progress(i, total)
         if on_state and gen == self._gen and not self._stop_evt.is_set():
-            on_state('朗读完成')
+            on_state(self._T('done'))
         if gen == self._gen:
             with self._lock:
                 self._chunks = None
@@ -976,9 +1029,19 @@ class Speaker:
 
     def __init__(self, engine_mode='neural'):
         self.engine_mode = engine_mode
+        self._lang = 'zh'
         self._neural = NeuralSpeaker()
         self._sapi = SapiSpeaker()
         self._active = self._pick_active()
+
+    def _T(self, key, *args):
+        msg = SPK_MSG.get(self._lang, SPK_MSG['zh']).get(key, key)
+        return msg % args if args else msg
+
+    def set_language(self, lang):
+        self._lang = 'en' if lang == 'en' else 'zh'
+        self._neural.set_language(self._lang)
+        self._sapi.set_language(self._lang)
 
     def _pick_active(self):
         if self.engine_mode == 'neural' and NeuralSpeaker.available():
@@ -1070,14 +1133,14 @@ class Speaker:
         if self._active == 'neural':
             try:
                 self._neural.export_mp3(text, out_path)
-                return True, out_path, 'AI 网络语音已导出为 MP3'
+                return True, out_path, self._T('export_mp3')
             except Exception as e:
-                return False, None, 'AI 导出失败（检查网络）：%s' % e
+                return False, None, self._T('export_fail') % e
         try:
             wav = out_path
             if out_path.lower().endswith('.mp3'):
                 wav = out_path[:-4] + '.wav'
             self._sapi.export_wav(text, wav)
-            return True, wav, '本地语音已导出为 WAV'
+            return True, wav, self._T('export_wav')
         except Exception as e:
-            return False, None, '本地语音导出失败：%s' % e
+            return False, None, self._T('export_wav_fail') % e

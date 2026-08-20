@@ -5,5 +5,5 @@ edge-tts>=6.1.0        # AI 神经网络语音
 comtypes>=1.1.14       # Windows SAPI 本地语音 / WMP 播放
 Pillow>=9.0.0          # 托盘图标
 pystray>=0.19.0        # 系统托盘
-pypdf>=3.0.0           # PDF 文字提取
+pymupdf>=1.23.0        # PDF 文字提取
 python-docx>=0.8.11    # Word 文档文字提取

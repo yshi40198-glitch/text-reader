@@ -1,17 +1,43 @@
 # -*- coding: utf-8 -*-
 """文档内容提取：PDF / Word(.docx .doc) / 纯文本(全部格式)，含朗读整理工具"""
 import os
+import re
 
 
 _BOX_CHARS = set(chr(c) for c in range(0x2500, 0x2580))  # 表格框线等装饰字符
 
+_PAGE_ONLY_RE = re.compile(r'^[-–—·\s]*\d{1,4}[-–—·\s]*$')       # 纯页码
+_PAGE_LABEL_RE = re.compile(r'^第\s*\d{1,4}\s*[页章]\s*$')        # 第X页/第X章
+_PAGE_DASH_RE = re.compile(r'^\s*[-–—]\s*\d{1,4}\s*[-–—]\s*$')   # - 12 -
+_FOOTER_RE = re.compile(r'^(页码|第\s*\d+\s*页\s*共\s*\d+\s*页|'
+                        r'Copyright|©|All\s+Rights\s+Reserved)',
+                        re.I)
 
-def clean_for_speech(text):
-    """整理成适合朗读的文本：去掉表格框线/装饰字符、压缩连续空行。"""
+
+def _is_noise(line):
+    """智能过滤：判断一行是否为页码/页眉页脚等朗读噪音。"""
+    if not line:
+        return False
+    if _PAGE_ONLY_RE.match(line) and len(line) <= 12:
+        return True
+    if _PAGE_LABEL_RE.match(line):
+        return True
+    if _PAGE_DASH_RE.match(line):
+        return True
+    if _FOOTER_RE.match(line) and len(line) <= 30:
+        return True
+    return False
+
+
+def clean_for_speech(text, smart_filter=True):
+    """整理成适合朗读的文本：去掉表格框线/装饰字符、压缩连续空行；
+    smart_filter=True 时跳过页码、页眉页脚等噪音行。"""
     lines = []
     for line in (text or '').splitlines():
         line = ''.join(ch for ch in line if ch not in _BOX_CHARS).strip()
         if line:
+            if smart_filter and _is_noise(line):
+                continue
             lines.append(line)
         else:
             if lines and lines[-1] != '':

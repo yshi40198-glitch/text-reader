@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""月薇阁 · 文字朗读工具 n2.5（极简黑白风格 · AI 神经网络语音 · 中英双语 · 便携版）
+"""薇阅 · 文字朗读工具 n2.6（朝阳暖色 · AI 神经网络语音 · 中英双语 · 便携版）
 
 功能:
 - 打开 PDF / Word / txt → 从头朗读
@@ -9,19 +9,21 @@
 - 实时进度条 + 正在朗读的段落高亮
 - 导出 MP3（AI 语音）/ WAV（本地语音）
 - 系统托盘：关窗口最小化，朗读不中断
+- 文本翻译 / 录音跟读 / 读链接 / 智能过滤
 """
 import os
 import threading
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from extract import extract_text, clean_for_speech, split_chunks
 from speaker import Speaker
+from translate import translate
 
 # ---------- 多语言界面 ----------
 UI = {
     'zh': {
-        'title': '薇阅 · 文字朗读工具 n2.5',
+        'title': '薇阅 · 文字朗读工具 n2.6',
         'app_title': '薇阅',
         'app_sub': '文字朗读工具',
         'btn_en': 'EN',
@@ -50,10 +52,18 @@ UI = {
         'timer_60': '60 分钟',
         'timer_90': '90 分钟',
         'volume': '音量',
+        'translate': '翻译',
+        'follow': '跟读',
+        'ocr': '图片识别',
         'not_started': '尚未开始',
         'no_voices': '(无可用语音)',
         'ctx_here': '从这里开始朗读',
         'ctx_sel': '朗读选中内容',
+        'menu_cut': '剪切',
+        'menu_copy': '复制',
+        'menu_paste': '粘贴',
+        'menu_delete': '删除',
+        'menu_select_all': '全选',
         'tray_show': '打开界面',
         'tray_pause': '暂停 / 继续',
         'tray_stop': '停止朗读',
@@ -98,6 +108,41 @@ UI = {
         'export_info': '文件：%s\n大小：%.1f MB\n时长约：%d 分 %d 秒',
         'dlg_open_title': '选择要朗读的文件',
         'dlg_save_title': '保存朗读音频',
+        'translate_title': '文本翻译',
+        'src_label': '原文',
+        'dst_label': '译文',
+        'translate_btn': '翻译',
+        'speak_result': '朗读译文',
+        'translating': '正在翻译…',
+        'translate_done': '翻译完成',
+        'translate_fail': '翻译失败：',
+        'input_first': '请先输入要翻译的文字',
+        'speaking': '正在朗读译文…',
+        'follow_title': '录音跟读',
+        'follow_hint': '听一句 → 跟读 → 回放对比',
+        'prev_sentence': '上一句',
+        'next_sentence': '下一句',
+        'play_original': '▶ 听原句',
+        'record_btn': '● 录音',
+        'replay': '▶ 回放',
+        'rec_secs': '录音时长(秒)',
+        'recording': '录音中…',
+        'recorded': '已录音，可回放',
+        'no_sentences': '没有可跟读的句子',
+        'link_title': '输入网址',
+        'link_prompt': '粘贴新闻/文章网址，薇阅将抓取正文朗读',
+        'fetching': '正在抓取网页…',
+        'fetch_fail': '抓取失败：',
+        'link_loaded': '已载入网页正文',
+        'link_empty': '网页里没提取到正文',
+        'link_antibot': '该网站有反爬保护，无法直接抓取正文。\n'
+                        '建议：复制正文后粘贴到软件里朗读，'
+                        '或下载成文本文件再打开。',
+        'ocr_title': '选择图片',
+        'ocr_working': '正在识别图片文字…',
+        'ocr_done': '已识别图片文字',
+        'ocr_fail': '识别失败：',
+        'ocr_empty': '图片里没识别到文字',
         'ft_docs': '支持的文档',
         'ft_pdf': 'PDF',
         'ft_word': 'Word',
@@ -109,7 +154,7 @@ UI = {
         'ft_wav': 'WAV 音频',
     },
     'en': {
-        'title': 'Weiyue Text Reader n2.5',
+        'title': 'Weiyue Text Reader n2.6',
         'app_title': '薇阅',
         'app_sub': 'Text Reader',
         'btn_en': '中',
@@ -138,10 +183,18 @@ UI = {
         'timer_60': '60 min',
         'timer_90': '90 min',
         'volume': 'Volume',
+        'translate': 'Translate',
+        'follow': 'Follow',
+        'ocr': 'Image OCR',
         'not_started': 'Not started',
         'no_voices': '(No voices available)',
         'ctx_here': 'Read from Here',
         'ctx_sel': 'Read Selected Text',
+        'menu_cut': 'Cut',
+        'menu_copy': 'Copy',
+        'menu_paste': 'Paste',
+        'menu_delete': 'Delete',
+        'menu_select_all': 'Select All',
         'tray_show': 'Show Window',
         'tray_pause': 'Pause / Resume',
         'tray_stop': 'Stop Reading',
@@ -187,6 +240,41 @@ UI = {
         'export_info': 'File: %s\nSize: %.1f MB\nDuration: %d min %d s',
         'dlg_open_title': 'Choose a file to read',
         'dlg_save_title': 'Save audio',
+        'translate_title': 'Translate',
+        'src_label': 'Source',
+        'dst_label': 'Translation',
+        'translate_btn': 'Translate',
+        'speak_result': 'Speak Result',
+        'translating': 'Translating...',
+        'translate_done': 'Done',
+        'translate_fail': 'Translate failed: ',
+        'input_first': 'Enter some text first',
+        'speaking': 'Speaking translation...',
+        'follow_title': 'Follow Reading',
+        'follow_hint': 'Listen -> Repeat -> Compare',
+        'prev_sentence': 'Prev',
+        'next_sentence': 'Next',
+        'play_original': 'Listen',
+        'record_btn': 'Record',
+        'replay': 'Replay',
+        'rec_secs': 'Seconds',
+        'recording': 'Recording...',
+        'recorded': 'Recorded, you can replay',
+        'no_sentences': 'No sentences to follow',
+        'link_title': 'Enter URL',
+        'link_prompt': 'Paste a news/article URL to read aloud',
+        'fetching': 'Fetching page...',
+        'fetch_fail': 'Fetch failed: ',
+        'link_loaded': 'Web content loaded',
+        'link_empty': 'No readable content found',
+        'link_antibot': 'This site has anti-bot protection and cannot be '
+                        'fetched directly.\nTip: copy the text and paste it '
+                        'here, or open a downloaded text file instead.',
+        'ocr_title': 'Select Image',
+        'ocr_working': 'Recognizing text...',
+        'ocr_done': 'Text recognized',
+        'ocr_fail': 'OCR failed: ',
+        'ocr_empty': 'No text found in image',
         'ft_docs': 'Supported documents',
         'ft_pdf': 'PDF',
         'ft_word': 'Word',
@@ -268,6 +356,8 @@ class App:
         self._reading_label = 'read_all'
         self._mark_offset = None
         self._current_chunk = 0
+        self._follow_win = None
+        self._tr_win = None
 
         self._set_window_icon()
         self._build_ui()
@@ -334,6 +424,9 @@ class App:
         self.btn_clear.config(text=self.T('clear'), width=btn_w)
         self.btn_mark.config(text=self.T('mark'))
         self.btn_read_mark.config(text=self.T('read_mark'))
+        self.btn_translate.config(text=self.T('translate'))
+        self.btn_follow.config(text=self.T('follow'))
+        self.btn_ocr.config(text=self.T('ocr'))
         self.lbl_quick.config(text=self.T('quick'))
         self.lbl_voice_src.config(text=self.T('voice_src'))
         self.lbl_voice.config(text=self.T('voice'))
@@ -366,6 +459,17 @@ class App:
                                   command=self.read_from_cursor)
             self._ctx.add_command(label=self.T('ctx_sel'),
                                   command=self.read_selection)
+            self._ctx.add_separator()
+            self._ctx.add_command(label=self.T('menu_cut'),
+                                  command=self._edit_cut)
+            self._ctx.add_command(label=self.T('menu_copy'),
+                                  command=self._edit_copy)
+            self._ctx.add_command(label=self.T('menu_paste'),
+                                  command=self._edit_paste)
+            self._ctx.add_command(label=self.T('menu_delete'),
+                                  command=self._edit_delete)
+            self._ctx.add_command(label=self.T('menu_select_all'),
+                                  command=self._edit_select_all)
         except Exception:
             pass
 
@@ -596,7 +700,7 @@ class App:
                                          padx=12, pady=5, font_size=11)
         self.btn_export.pack(side=tk.LEFT, padx=3)
 
-        # ===== 标记行（疏）：打标记 / 从标记朗读 =====
+        # ===== 标记 + 工具行（疏）：打标记 / 从标记朗读 / 翻译 / 跟读 / 读链接 =====
         mark_row = tk.Frame(self.root, bg=COL_BG)
         mark_row.pack(fill=tk.X, padx=30, pady=(10, 0))
         self.btn_mark = self._flat_btn(mark_row, self.T('mark'), COL_PANEL,
@@ -608,9 +712,24 @@ class App:
                                             self.read_from_mark,
                                             padx=12, pady=5, font_size=10)
         self.btn_read_mark.pack(side=tk.LEFT, padx=6)
+        self.btn_translate = self._flat_btn(mark_row, self.T('translate'),
+                                            COL_PANEL, COL_BLACK,
+                                            self.open_translate,
+                                            padx=12, pady=5, font_size=10)
+        self.btn_translate.pack(side=tk.LEFT)
+        self.btn_follow = self._flat_btn(mark_row, self.T('follow'),
+                                         COL_PANEL, COL_BLACK,
+                                         self.open_follow,
+                                         padx=12, pady=5, font_size=10)
+        self.btn_follow.pack(side=tk.LEFT, padx=6)
+        self.btn_ocr = self._flat_btn(mark_row, self.T('ocr'),
+                                      COL_PANEL, COL_BLACK,
+                                      self.scan_image,
+                                      padx=12, pady=5, font_size=10)
+        self.btn_ocr.pack(side=tk.LEFT, padx=6)
         self.mark_lbl = tk.Label(mark_row, text="", bg=COL_BG, fg=COL_GRAY,
                                  font=_f(10))
-        self.mark_lbl.pack(side=tk.LEFT, padx=10)
+        self.mark_lbl.pack(side=tk.LEFT, padx=14)
 
         # ===== 语音分组卡片（密）：语音来源 + 声线合并 =====
         voice_group = tk.Frame(self.root, bg=COL_PANEL2, relief="ridge", bd=1)
@@ -736,7 +855,95 @@ class App:
                               command=self.read_from_cursor)
         self._ctx.add_command(label=self.T('ctx_sel'),
                               command=self.read_selection)
+        self._ctx.add_separator()
+        self._ctx.add_command(label=self.T('menu_cut'),
+                              command=self._edit_cut)
+        self._ctx.add_command(label=self.T('menu_copy'),
+                              command=self._edit_copy)
+        self._ctx.add_command(label=self.T('menu_paste'),
+                              command=self._edit_paste)
+        self._ctx.add_command(label=self.T('menu_delete'),
+                              command=self._edit_delete)
+        self._ctx.add_command(label=self.T('menu_select_all'),
+                              command=self._edit_select_all)
         self.text.bind("<Button-3>", self._show_ctx)
+
+    def _edit_cut(self):
+        self.text.event_generate('<<Cut>>')
+
+    def _edit_copy(self):
+        self.text.event_generate('<<Copy>>')
+
+    def _edit_paste(self):
+        self.text.event_generate('<<Paste>>')
+
+    def _edit_delete(self):
+        try:
+            r = self.text.tag_ranges(tk.SEL)
+            if r:
+                self.text.delete(r[0], r[1])
+        except Exception:
+            pass
+
+    def _edit_select_all(self):
+        try:
+            self.text.tag_add(tk.SEL, '1.0', 'end')
+            self.text.mark_set('insert', 'end')
+            self.text.see('insert')
+        except Exception:
+            pass
+
+    def _bind_text_menu(self, widget):
+        """给任意文本控件绑定右键编辑菜单（剪切/复制/粘贴/删除/全选）。"""
+        menu = tk.Menu(widget, tearoff=0, font=_f(10),
+                       bg=COL_PANEL, fg=COL_BLACK,
+                       activebackground=COL_BLACK,
+                       activeforeground=COL_PANEL,
+                       bd=1, relief="solid")
+
+        def _cut():
+            widget.event_generate('<<Cut>>')
+
+        def _copy():
+            widget.event_generate('<<Copy>>')
+
+        def _paste():
+            widget.event_generate('<<Paste>>')
+
+        def _delete():
+            try:
+                r = widget.tag_ranges(tk.SEL)
+                if r:
+                    widget.delete(r[0], r[1])
+            except Exception:
+                pass
+
+        def _select_all():
+            try:
+                widget.tag_add(tk.SEL, '1.0', 'end')
+                widget.mark_set('insert', 'end')
+                widget.see('insert')
+            except Exception:
+                pass
+
+        def _show(event):
+            try:
+                widget.mark_set("insert", "@%d,%d" % (event.x, event.y))
+                menu.delete(0, 'end')
+                menu.add_command(label=self.T('menu_cut'), command=_cut)
+                menu.add_command(label=self.T('menu_copy'), command=_copy)
+                menu.add_command(label=self.T('menu_paste'), command=_paste)
+                menu.add_command(label=self.T('menu_delete'), command=_delete)
+                menu.add_command(label=self.T('menu_select_all'),
+                                 command=_select_all)
+                menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                try:
+                    menu.grab_release()
+                except Exception:
+                    pass
+
+        widget.bind("<Button-3>", _show)
 
     def _flat_btn(self, parent, text, bg, fg, cmd=None, padx=12, pady=7,
                   font_size=11, width=None):
@@ -1005,6 +1212,8 @@ class App:
             return
         self.current_path = path
         self.full_text = text
+        self.state_lbl.config(text=self.T('loading'), fg=COL_BLACK)
+        self.root.update_idletasks()
         self._load_text(text)
         self.file_lbl.config(text=os.path.basename(path), fg=COL_BLACK)
         self.state_lbl.config(text=self.T('loaded', len(self.full_text)),
@@ -1013,6 +1222,8 @@ class App:
     def _load_text(self, text):
         self.text.delete("1.0", tk.END)
         self.text.insert("1.0", text)
+        self.text.see("1.0")
+        self.text.mark_set("insert", "1.0")
 
     def clear_text(self):
         if self.speaker:
@@ -1031,6 +1242,305 @@ class App:
         self.file_lbl.config(text=self.T('no_file'), fg=COL_GRAY)
         self.state_lbl.config(text=self.T('cleared'), fg=COL_GRAY)
         self._reading_label = 'read_all'
+
+    # ---------- 文本翻译 ----------
+    def open_translate(self):
+        if self._tr_win is not None and self._tr_win.winfo_exists():
+            self._tr_win.lift()
+            return
+        win = tk.Toplevel(self.root)
+        win.title(self.T('translate_title'))
+        win.geometry('680x560')
+        win.configure(bg=COL_BG)
+        win.minsize(560, 420)
+        win.transient(self.root)
+
+        tk.Label(win, text=self.T('src_label'), bg=COL_BG, fg=COL_BLACK,
+                 font=_f(11, True)).pack(anchor='w', padx=18, pady=(16, 4))
+        src = tk.Text(win, wrap=tk.WORD, font=(FONT, 12), height=7,
+                      bg=COL_PANEL, fg=COL_BLACK, relief='sunken', bd=1,
+                      padx=10, pady=8, insertbackground=COL_BLACK,
+                      selectbackground=COL_HL, selectforeground=COL_BLACK,
+                      highlightbackground=COL_LINE, highlightthickness=2)
+        src.pack(fill=tk.X, padx=18)
+        self._bind_text_menu(src)
+
+        btn_row = tk.Frame(win, bg=COL_BG)
+        btn_row.pack(fill=tk.X, padx=18, pady=8)
+        btn_go = self._flat_btn(btn_row, self.T('translate_btn'), COL_PANEL,
+                                COL_BLACK, None, padx=16, pady=6, font_size=11)
+        btn_go.pack(side=tk.LEFT)
+        btn_speak = self._flat_btn(btn_row, self.T('speak_result'), COL_PANEL,
+                                   COL_BLACK, None, padx=14, pady=6,
+                                   font_size=11)
+        btn_speak.pack(side=tk.LEFT, padx=8)
+        tr_state = tk.Label(btn_row, text='', bg=COL_BG, fg=COL_GRAY,
+                            font=_f(10))
+        tr_state.pack(side=tk.LEFT, padx=12)
+
+        tk.Label(win, text=self.T('dst_label'), bg=COL_BG, fg=COL_BLACK,
+                 font=_f(11, True)).pack(anchor='w', padx=18, pady=(6, 4))
+        dst = tk.Text(win, wrap=tk.WORD, font=(FONT, 12), height=9,
+                      bg=COL_PANEL2, fg=COL_BLACK, relief='sunken', bd=1,
+                      padx=10, pady=8, insertbackground=COL_BLACK,
+                      selectbackground=COL_HL, selectforeground=COL_BLACK,
+                      highlightbackground=COL_LINE, highlightthickness=2)
+        dst.pack(fill=tk.BOTH, expand=True, padx=18, pady=(0, 16))
+        self._bind_text_menu(dst)
+
+        self._tr_win = win
+        self._tr_src = src
+        self._tr_dst = dst
+        self._tr_state = tr_state
+        self._tr_btn_go = btn_go
+        btn_go.config(command=self._do_translate)
+        btn_speak.config(command=self._speak_translation)
+
+        def _close_tr():
+            if self.speaker is not None:
+                try:
+                    self.speaker.stop()
+                except Exception:
+                    pass
+            win.destroy()
+            self._tr_win = None
+        win.protocol('WM_DELETE_WINDOW', _close_tr)
+
+    def _do_translate(self):
+        text = self._tr_src.get('1.0', 'end').strip()
+        if not text:
+            messagebox.showinfo(self.T('dlg_tip'), self.T('input_first'),
+                                parent=self._tr_win)
+            return
+        self._tr_state.config(text=self.T('translating'), fg=COL_GRAY)
+        self._tr_btn_go.config(state='disabled')
+
+        def work():
+            try:
+                out = translate(text)
+                err = None
+            except Exception as e:
+                out, err = None, e
+            self.root.after(0, lambda: self._tr_done(out, err))
+        threading.Thread(target=work, daemon=True).start()
+
+    def _tr_done(self, out, err):
+        try:
+            self._tr_btn_go.config(state='normal')
+        except Exception:
+            pass
+        if err is not None:
+            self._tr_state.config(text=self.T('translate_fail') + str(err),
+                                  fg=COL_RED)
+            return
+        self._tr_dst.delete('1.0', 'end')
+        self._tr_dst.insert('1.0', out or '')
+        self._tr_state.config(text=self.T('translate_done'), fg=COL_BLUE)
+
+    def _speak_translation(self):
+        txt = self._tr_dst.get('1.0', 'end').strip()
+        if not txt:
+            return
+        sp = self._get_speaker()
+        if not sp:
+            return
+        chunks = split_chunks(clean_for_speech(txt))
+        self._tr_state.config(text=self.T('speaking'), fg=COL_GRAY)
+        sp.speak(chunks, on_progress=None, on_state=self._on_state)
+
+    # ---------- 录音跟读 ----------
+    def open_follow(self):
+        from follow import FollowReader  # 用到才加载录音库，加快启动
+        if self._follow_win is not None and self._follow_win.winfo_exists():
+            self._follow_win.lift()
+            return
+        chunks = split_chunks(clean_for_speech(self.full_text)) \
+            if self.full_text else []
+        win = tk.Toplevel(self.root)
+        win.title(self.T('follow_title'))
+        win.geometry('700x430')
+        win.configure(bg=COL_BG)
+        win.minsize(600, 380)
+        win.transient(self.root)
+
+        tk.Label(win, text=self.T('follow_hint'), bg=COL_BG, fg=COL_GRAY,
+                 font=_f(10)).pack(anchor='w', padx=20, pady=(16, 6))
+        sent_lbl = tk.Label(win, text='', bg=COL_PANEL, fg=COL_BLACK,
+                            font=(FONT, 14), wraplength=620, justify='left',
+                            padx=16, pady=16, relief='sunken', bd=1,
+                            highlightbackground=COL_LINE,
+                            highlightthickness=2)
+        sent_lbl.pack(fill=tk.X, padx=20)
+
+        ctrl = tk.Frame(win, bg=COL_BG)
+        ctrl.pack(fill=tk.X, padx=20, pady=12)
+        btn_prev = self._flat_btn(ctrl, self.T('prev_sentence'), COL_PANEL,
+                                  COL_BLACK, None, padx=12, pady=6,
+                                  font_size=10)
+        btn_prev.pack(side=tk.LEFT)
+        btn_next = self._flat_btn(ctrl, self.T('next_sentence'), COL_PANEL,
+                                  COL_BLACK, None, padx=12, pady=6,
+                                  font_size=10)
+        btn_next.pack(side=tk.LEFT, padx=6)
+        btn_play = self._flat_btn(ctrl, self.T('play_original'), COL_PANEL,
+                                  COL_BLACK, None, padx=12, pady=6,
+                                  font_size=10)
+        btn_play.pack(side=tk.LEFT, padx=6)
+        btn_rec = self._flat_btn(ctrl, self.T('record_btn'), COL_PANEL2,
+                                 COL_BLACK, None, padx=12, pady=6,
+                                 font_size=10)
+        btn_rec.pack(side=tk.LEFT, padx=6)
+        btn_replay = self._flat_btn(ctrl, self.T('replay'), COL_PANEL,
+                                    COL_BLACK, None, padx=12, pady=6,
+                                    font_size=10)
+        btn_replay.pack(side=tk.LEFT, padx=6)
+        tk.Label(ctrl, text=self.T('rec_secs'), bg=COL_BG, fg=COL_GRAY,
+                 font=_f(10)).pack(side=tk.LEFT, padx=(14, 4))
+        secs = ttk.Spinbox(ctrl, from_=2, to=20, width=4, font=_f(10))
+        secs.set(6)
+        secs.pack(side=tk.LEFT)
+
+        status = tk.Label(win, text='', bg=COL_BG, fg=COL_GRAY, font=_f(10))
+        status.pack(anchor='w', padx=20, pady=(0, 16))
+
+        vid = 'zh-CN-XiaoxiaoNeural'
+        try:
+            if self.speaker is not None:
+                vid = self.speaker.current_voice_id()
+        except Exception:
+            pass
+        st = {'idx': 0, 'chunks': chunks, 'busy': False,
+              'reader': FollowReader(voice_id=vid)}
+
+        def show():
+            if not st['chunks']:
+                sent_lbl.config(text=self.T('no_sentences'))
+                return
+            sent_lbl.config(
+                text='[%d/%d]  %s' % (st['idx'] + 1, len(st['chunks']),
+                                      st['chunks'][st['idx']]))
+
+        def set_busy(v, text='', color=COL_GRAY):
+            st['busy'] = v
+            status.config(text=text, fg=color)
+
+        def prev():
+            if not chunks:
+                return
+            st['idx'] = (st['idx'] - 1) % len(chunks)
+            show()
+
+        def nxt():
+            if not chunks:
+                return
+            st['idx'] = (st['idx'] + 1) % len(chunks)
+            show()
+
+        def play():
+            if not chunks or st['busy']:
+                return
+            set_busy(True, self.T('play_original'), COL_GRAY)
+
+            def work():
+                try:
+                    st['reader'].play_sentence(chunks[st['idx']])
+                except Exception:
+                    pass
+                self.root.after(0, lambda: set_busy(False))
+            threading.Thread(target=work, daemon=True).start()
+
+        def rec():
+            if not chunks or st['busy']:
+                return
+            sec = 6
+            try:
+                sec = int(float(secs.get()))
+            except Exception:
+                pass
+            sec = max(2, min(20, sec))
+            set_busy(True, self.T('recording'), COL_RED)
+
+            def work():
+                try:
+                    st['reader'].record(sec)
+                    ok = True
+                except Exception:
+                    ok = False
+                self.root.after(0, lambda: set_busy(
+                    False, self.T('recorded') if ok else self.T('fetch_fail'),
+                    COL_BLUE if ok else COL_RED))
+            threading.Thread(target=work, daemon=True).start()
+
+        def replay():
+            if st['busy']:
+                return
+            set_busy(True, self.T('replay'), COL_GRAY)
+
+            def work():
+                try:
+                    st['reader'].play_recording()
+                except Exception:
+                    pass
+                self.root.after(0, lambda: set_busy(False))
+            threading.Thread(target=work, daemon=True).start()
+
+        btn_prev.config(command=prev)
+        btn_next.config(command=nxt)
+        btn_play.config(command=play)
+        btn_rec.config(command=rec)
+        btn_replay.config(command=replay)
+
+        def on_close():
+            try:
+                st['reader'].cleanup()
+            except Exception:
+                pass
+            win.destroy()
+            self._follow_win = None
+
+        win.protocol('WM_DELETE_WINDOW', on_close)
+        self._follow_win = win
+        show()
+
+    # ---------- 图片识别（OCR） ----------
+    def scan_image(self):
+        from ocr import ocr_image  # 用到才加载 OCR 组件
+        path = filedialog.askopenfilename(
+            title=self.T('ocr_title'),
+            filetypes=[('Image', '*.png *.jpg *.jpeg *.bmp *.webp'),
+                       (self.T('ft_all'), '*.*')])
+        if not path:
+            return
+        self.state_lbl.config(text=self.T('ocr_working'), fg=COL_BLACK)
+
+        def work():
+            try:
+                text = ocr_image(path)
+                err = None
+            except Exception as e:
+                text, err = None, e
+            self.root.after(0, lambda: self._finish_ocr(path, text, err))
+        threading.Thread(target=work, daemon=True).start()
+
+    def _finish_ocr(self, path, text, err):
+        if err is not None:
+            self.state_lbl.config(text=self.T('ready'), fg=COL_GRAY)
+            messagebox.showerror(self.T('dlg_err'),
+                                 self.T('ocr_fail') + str(err))
+            return
+        text = (text or '').strip()
+        if not text:
+            self.state_lbl.config(text=self.T('ready'), fg=COL_GRAY)
+            messagebox.showinfo(self.T('dlg_tip'), self.T('ocr_empty'))
+            return
+        self.current_path = None
+        self.full_text = text
+        self.state_lbl.config(text=self.T('ocr_working'), fg=COL_BLACK)
+        self.root.update_idletasks()
+        self._load_text(text)
+        self.file_lbl.config(text=os.path.basename(path), fg=COL_BLACK)
+        self.state_lbl.config(text=self.T('ocr_done'), fg=COL_BLUE)
+        self._start_reading(text, base=0, label='read_all')
 
     # ---------- 语音 ----------
     def _get_speaker(self):

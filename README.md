@@ -4,9 +4,10 @@
 
 **English** | [中文文档](README.zh-CN.md)
 
-Weiyue reads PDF, Word, EPUB and TXT out loud in natural voices. Whether it's
-a novel on your commute, work documents late at night, or English articles
-for listening practice, Weiyue keeps you company with a warm, human-like voice.
+Weiyue turns PDF, Word, EPUB, TXT — and even photos of printed pages — into
+natural spoken audio. Whether it's a novel on your commute, work documents
+late at night, or English articles for listening practice, Weiyue keeps you
+company with a warm, human-like voice. **Free, open source, no installation.**
 
 ---
 
@@ -15,21 +16,25 @@ for listening practice, Weiyue keeps you company with a warm, human-like voice.
 | Use case | How |
 |----------|-----|
 | 📖 **Audiobook / e-book listening** | Open EPUB / PDF / TXT, press "Read from Start" and finish whole books with your eyes closed; 1.5x is perfect for stories |
-| 🎧 **Chinese & English listening practice** | Pick an English voice (Aria / Guy / Jenny / Sonia), slow down to 0.5x and follow along for pronunciation |
+| 🖼️ **Read printed pages & screenshots** | Point the built-in OCR at a photo of a book page or a screenshot — the text is recognized offline and read aloud instantly |
+| 🎧 **Chinese & English listening practice** | Translate Chinese <-> English in-app, listen to the translation, or follow along sentence by sentence with the recorder |
+| 🎙️ **Follow-reading (speaking practice)** | Listen to a sentence, record your own voice, replay and compare — like having a speaking partner |
 | 💼 **Business docs & meeting materials** | Skim Word / PDF briefs at 2x; mark key points and resume from the mark anytime |
 | 🌙 **Sleep timer** | Auto-stop after 15 / 30 / 60 / 90 minutes — drift off while listening |
-| ✍️ **Screen-free reading** | Give your eyes a break: turn text into voice and listen while doing chores |
 
 ---
 
-## ✨ n2.5 Highlights
+## ✨ n2.6 Highlights
 
-- 🌅 **Sunrise warm UI**: cream background, apricot-orange accents, embossed buttons
+- 🌐 **Text translation** (Chinese <-> English): long text is auto-split and
+  translated reliably, with one-click "Speak Result"
+- 🎙️ **Follow-reading recorder**: listen -> repeat -> replay and compare
+- 🖼️ **Image OCR**: recognize text from photos, screenshots and scanned pages
+  using the built-in Windows engine — **fully offline**
+- 🧹 **Smart filter**: automatically skips page numbers, headers and footers
+  while reading, for a cleaner listening experience
 - 🌍 **Bilingual interface**: one-click switch between 中文 and English
-- 🪶 **Brand title**: feather badge + "Weiyue"
-- ⚡ **Non-blocking file loading**: large documents no longer freeze the app
-- 🖱️ **One-click desktop shortcut** (fixed)
-- 🔊 **60+ AI voices** (Mandarin, English, Cantonese, Taiwanese...), auto fallback to local voice when offline
+- ⚡ Fast startup and non-blocking file loading
 
 Full history: [CHANGELOG.md](CHANGELOG.md)
 
@@ -38,12 +43,17 @@ Full history: [CHANGELOG.md](CHANGELOG.md)
 ## ✨ Features
 
 - Open PDF / Word (.docx / .doc) / txt / md / EPUB / HTML and read aloud
+- Image OCR (PNG / JPG / BMP / WEBP / TIFF), auto-resize for large photos,
+  auto-retry with 2x zoom for small text
+- Text translation (Chinese <-> English) with speakable result
+- Follow-reading: listen to each sentence, record and replay your voice
 - Read from start / from cursor / selection / from mark
 - Speed presets 0.5x ~ 3x, smooth switching while reading
 - Volume 0~100%, sleep timer (15 / 30 / 60 / 90 min)
 - Bookmark: mark where you are, resume anytime
 - Export audio: AI voice to MP3 / local voice to WAV (auto retry)
 - Progress bar + reading-paragraph highlight, system tray, desktop shortcut
+- Full edit menus (cut / copy / paste / delete) everywhere text is editable
 
 ---
 
@@ -59,6 +69,9 @@ pip install -r requirements.txt
 python textreader_app.py
 ```
 
+> Note: Image OCR uses the Windows built-in OCR engine — make sure the
+> "Chinese (Simplified) OCR" language pack is installed in Windows settings.
+
 ---
 
 ## 🧩 Tech Stack
@@ -66,6 +79,8 @@ python textreader_app.py
 - UI: Python Tkinter (warm sunrise theme, embossed buttons)
 - AI voice: edge-tts (neural voices, requires internet)
 - Offline fallback: Windows SAPI system voices
+- OCR: Windows.Media.Ocr (offline, built-in engine)
+- Recording: sounddevice / numpy
 - Text extraction: PyMuPDF / python-docx / HTMLParser
 
 ---

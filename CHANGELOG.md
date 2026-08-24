@@ -5,6 +5,30 @@ All notable changes are recorded here. Versions start from n2.1.
 
 ---
 
+## [n2.6] - 2026-08
+
+**Theme: translate, follow along, and read anything.**
+**主题：翻译、跟读、什么都能读。**
+
+### Added / 新增
+- Text translation (Chinese <-> English) with "speak result" / 文本翻译（中英互译），可朗读译文
+- Follow-reading recorder: listen -> repeat -> replay / 录音跟读：听原句 → 跟读 → 回放对比
+- Image OCR: scan photos/screenshots/scanned pages, read text aloud offline / 图片识别：扫描图片文字并朗读（离线）
+- Smart filter: auto-skip page numbers, headers and footers / 智能过滤：自动跳过页码、页眉页脚等杂音
+
+### Changed / 改进
+- Tool buttons (Translate / Follow / Image OCR) grouped with Mark buttons / 翻译、跟读、图片识别与标记按钮同排
+- Following uses the currently selected voice / 跟读使用当前所选声线
+- Translation auto-splits long text to stay within free API limits / 翻译自动分段，长文本也能翻
+- OCR auto-resizes large images and retries on small text / 图片识别自动缩放、小字放大重试
+
+### Benefits / 对使用者的帮助
+- Learn English by listening to translations and recording your own voice / 听译文、录自己声音练口语
+- Read printed pages and screenshots aloud / 纸质书页、截图也能"读"
+- Cleaner listening experience without page-number noise / 朗读更干净，没有页码杂音
+
+---
+
 ## [n2.5] - 2026-08
 
 **Theme: prettier, smoother, and usable by more people.**

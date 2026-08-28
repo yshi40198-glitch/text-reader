@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""文档内容提取：PDF / Word(.docx .doc) / 纯文本(全部格式)，含朗读整理工具"""
+"""文档内容提取：PDF / Word(.docx .doc) / 纯文本 / EPUB / MOBI / FB2，含朗读整理工具"""
 import os
 import re
 
@@ -89,6 +89,10 @@ def extract_text(path):
         return extract_doc(path)
     elif ext in ('.epub',):
         return extract_epub(path)
+    elif ext in ('.mobi', '.azw', '.azw3'):
+        return extract_mobi(path)
+    elif ext in ('.fb2',):
+        return extract_fb2(path)
     elif ext in ('.html', '.htm'):
         return extract_html(path)
     elif ext in ('.txt', '.md', '.text'):
@@ -177,6 +181,156 @@ def extract_epub(path):
             except Exception:
                 continue
     return '\n'.join(texts)
+
+
+def _mobi_unpack_palmdoc(data):
+    """MOBI 用的 PalmDoc 压缩解压（LZ77 变体），返回解压后的字节。"""
+    out = bytearray()
+    p = 0
+    n = len(data)
+    while p < n:
+        c = data[p]
+        p += 1
+        if 1 <= c <= 8:
+            # 短字面量：直接复制 c 个字节
+            out.extend(data[p:p + c])
+            p += c
+        elif c < 128:
+            # 单个字面字节
+            out.append(c)
+        elif c >= 192:
+            # 空格 + 一个字节（c ^ 128）
+            out.append(0x20)
+            out.append(c ^ 128)
+        else:
+            # 128..191：回指复制
+            if p >= n:
+                break
+            c = (c << 8) | data[p]
+            p += 1
+            dist = (c >> 3) & 0x7FF
+            length = (c & 7) + 3
+            if dist > length:
+                out.extend(out[-dist:length - dist])
+            else:
+                for _ in range(length):
+                    out.append(out[-dist])
+    return bytes(out)
+
+
+def _mobi_strip_html(html_text):
+    """把 MOBI 的 HTML 正文转成纯文本（解析实体，保留段落换行）。"""
+    from html.parser import HTMLParser
+    import html as _html
+
+    class _Text(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.parts = []
+
+        def handle_data(self, data):
+            self.parts.append(data)
+
+        def handle_entityref(self, name):
+            self.parts.append('&%s;' % name)
+
+        def handle_charref(self, name):
+            self.parts.append('&#%s;' % name)
+
+    p = _Text()
+    p.feed(html_text)
+    return _html.unescape(''.join(p.parts))
+
+
+def extract_mobi(path):
+    """MOBI / AZW 电子书：解析 PDB 结构 + PalmDoc 解压，取出正文。
+
+    MOBI 本质是 Palm 数据库（PDB）：第 0 条记录是 PalmDoc 头 + MOBI 头，
+    之后的正文记录用 PalmDoc 压缩算法存 HTML。这里只做纯文本提取，
+    不解析目录、封面等元数据。
+    """
+    import struct
+
+    with open(path, 'rb') as f:
+        raw = f.read()
+    if len(raw) < 78:
+        raise ValueError('文件太小，不是有效的 MOBI 电子书')
+    nrec = struct.unpack('>H', raw[76:78])[0]
+    if nrec < 2:
+        raise ValueError('MOBI 电子书里没有正文记录')
+    offsets = []
+    for i in range(nrec):
+        offsets.append(struct.unpack('>I', raw[78 + i * 8: 78 + i * 8 + 4])[0])
+
+    rec0 = raw[offsets[0]: offsets[1] if nrec > 1 else len(raw)]
+    compression = struct.unpack('>H', rec0[0:2])[0]
+    text_len = struct.unpack('>I', rec0[4:8])[0]
+
+    # MOBI 头在第 0 条记录的 16 字节之后；第一个图片记录号在 0x5C 处
+    first_image = None
+    if len(rec0) >= 16 + 0x60 and rec0[16:20] == b'MOBI':
+        first_image = struct.unpack('>I', rec0[16 + 0x5C: 16 + 0x5C + 4])[0]
+
+    end = nrec
+    if first_image and 1 < first_image < nrec:
+        end = first_image
+
+    parts = []
+    for i in range(1, end):
+        s = offsets[i]
+        e = offsets[i + 1] if i + 1 < nrec else len(raw)
+        seg = raw[s:e]
+        if compression == 2:
+            seg = _mobi_unpack_palmdoc(seg)
+        parts.append(seg)
+    data = b''.join(parts)
+    if text_len and 0 < text_len < len(data):
+        data = data[:text_len]
+
+    text = None
+    for enc in ('utf-8', 'gb18030'):
+        try:
+            text = data.decode(enc)
+            break
+        except (UnicodeDecodeError, ValueError):
+            continue
+    if text is None:
+        text = data.decode('utf-8', errors='ignore')
+    return _mobi_strip_html(text)
+
+
+def extract_fb2(path):
+    """FB2 电子书（XML）：把正文段落按顺序拼出来。"""
+    import xml.etree.ElementTree as ET
+
+    raw = read_text_file(path)
+    root = ET.fromstring(raw)
+
+    def local(tag):
+        return tag.rsplit('}', 1)[-1]
+
+    leaf_tags = ('p', 'subtitle', 'text-author', 'v')
+
+    parts = []
+    for el in root.iter():
+        t = local(el.tag)
+        if t not in leaf_tags:
+            continue
+        # 只取最底层的段落，避免父节点(如 title/poem)重复收集
+        has_leaf_child = False
+        for child in el.iter():
+            if child is el:
+                continue
+            if local(child.tag) in leaf_tags:
+                has_leaf_child = True
+                break
+        if not has_leaf_child:
+            txt = ''.join(el.itertext()).strip()
+            if txt:
+                parts.append(txt)
+    if not parts:
+        raise ValueError('FB2 电子书里没有提取到正文')
+    return '\n'.join(parts)
 
 
 def extract_html(path):

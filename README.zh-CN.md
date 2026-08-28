@@ -11,8 +11,8 @@
 
 ![薇阅中文主界面](assets/screenshot-zh.png)
 
-[![License: MIT](https://img.shields.io/github/license/yshi40198-glitch/text-reader)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/yshi40198-glitch/text-reader)](https://github.com/yshi40198-glitch/text-reader)
+[![License: MIT](https://img.shields.io/github/license/yshi40198-glitch/weiyue-text-reader)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/yshi40198-glitch/weiyue-text-reader)](https://github.com/yshi40198-glitch/weiyue-text-reader)
 
 ---
 

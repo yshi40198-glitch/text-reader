@@ -27,6 +27,9 @@ else:
     if old not in s:
         print('没找到原来的配置行，请手动把 config.yaml 的内容发给我。')
         raise SystemExit(1)
+    import shutil
+    import datetime
+    shutil.copy2(p, p + '.bak-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
     s = s.replace(old, new, 1)
     with open(p, 'w', encoding='utf-8') as f:
         f.write(s)

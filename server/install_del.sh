@@ -25,7 +25,10 @@ fi
 echo "===== 第 1 步：写入删除服务 ====="
 cat > del_server.py <<PYEOF
 # -*- coding: utf-8 -*-
-"""薇阅云端书库 · 删除服务：校验密钥后删除 library 里的 txt 书，并刷新书单。"""
+"""薇阅云端书库 · 删除服务：校验密钥后删除 library 里的 txt 书，并刷新书单。
+
+密钥通过 POST 请求体发送（兼容旧版 GET），不会出现在网址和访问日志里。
+"""
 import os
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -47,8 +50,25 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self):
+        self._handle(urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query))
+
+    def do_POST(self):
+        length = int(self.headers.get('Content-Length') or 0)
+        body = self.rfile.read(length).decode('utf-8', 'ignore') if length else ''
+        self._handle(urllib.parse.parse_qs(body))
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Max-Age', '86400')
+        self.send_header('Content-Length', '0')
+        self.end_headers()
+
+    def _handle(self, q):
         try:
-            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             rel = (q.get('file') or [''])[0].strip().lstrip('/')
             key = (q.get('key') or [''])[0].strip()
             if not key or key != load_key():
@@ -136,32 +156,55 @@ export DOMAIN
 python3 <<'PYEOF'
 import os
 import re
+import shutil
+import datetime
 p = '/root/.cloudflared/config.yaml'
 s = open(p, encoding='utf-8').read()
+need_tts = 'http://localhost:8123' not in s
+need_del = 'http://localhost:8124' not in s
+if not need_tts and not need_del:
+    print('隧道配置已包含薇阅路由，跳过修改。')
+    raise SystemExit(0)
 tm = re.search(r'^tunnel:\s*(\S+)', s, re.M)
 if not tm:
     print('没找到 tunnel 行，请把 config.yaml 的内容发给我。')
     raise SystemExit(1)
-cm = re.search(r'^credentials-file:\s*(\S+)', s, re.M)
-cred = cm.group(1) if cm else '/root/.cloudflared/%s.json' % tm.group(1)
 d = os.environ.get('DOMAIN', '')
-new = (
-    'tunnel: %s\n'
-    'credentials-file: %s\n'
-    '\n'
-    'ingress:\n'
-    '- hostname: %s\n'
-    '  path: /wytts\n'
-    '  service: http://localhost:8123\n'
-    '- hostname: %s\n'
-    '  path: /wydel\n'
-    '  service: http://localhost:8124\n'
-    '- hostname: %s\n'
-    '  service: http://localhost:8080\n'
-    '- service: http_status:404\n'
-) % (tm.group(1), cred, d, d, d)
-open(p, 'w', encoding='utf-8').write(new)
-print('隧道配置已更新。')
+if not d:
+    m = re.search(r'hostname:\s*([^\s]+)', s)
+    d = m.group(1) if m else ''
+if not d:
+    print('没有检测到域名，请在运行前设置环境变量 DOMAIN=你的域名')
+    raise SystemExit(1)
+bak = p + '.bak-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+shutil.copy2(p, bak)
+print('已备份原配置到：%s' % bak)
+routes = ''
+if need_tts:
+    routes += ('- hostname: %s\n'
+               '  path: /wytts\n'
+               '  service: http://localhost:8123\n') % d
+if need_del:
+    routes += ('- hostname: %s\n'
+               '  path: /wydel\n'
+               '  service: http://localhost:8124\n') % d
+lines = s.splitlines(True)
+idx = None
+for i, line in enumerate(lines):
+    if re.match(r'^\s*-\s*hostname:', line):
+        idx = i
+        break
+if idx is None:
+    for i, line in enumerate(lines):
+        if re.match(r'^\s*-\s*service:', line):
+            idx = i
+            break
+if idx is None:
+    print('没找到 ingress 路由行，请把 config.yaml 的内容发给我。')
+    raise SystemExit(1)
+lines[idx:idx] = [routes]
+open(p, 'w', encoding='utf-8').write(''.join(lines))
+print('隧道配置已更新（保留原有路由）。')
 PYEOF
 RC=$?
 if [ $RC -ne 0 ]; then
@@ -203,7 +246,8 @@ fi
 echo "===== 第 6 步：测试删除服务 ====="
 sleep 1
 CODE=$(curl -s -o /tmp/wy_del_test.txt -w "%{http_code}" \
-  "http://localhost:8124/del?file=library/abc.txt&key=wrong")
+  -X POST -d "file=library/abc.txt&key=wrong" \
+  "http://localhost:8124/wydel")
 BODY=$(cat /tmp/wy_del_test.txt)
 echo "密钥校验测试：HTTP $CODE，返回 $BODY"
 if [ "$CODE" = "403" ]; then

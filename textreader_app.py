@@ -1819,7 +1819,7 @@ class App:
                 name = '早间新闻-%s.txt' % today
                 url = base + urllib.parse.quote('/早间新闻/' + name)
                 req = urllib.request.Request(
-                    url, headers={'User-Agent': 'Weiyue/2.8'})
+                    url, headers={'User-Agent': 'Weiyue/3.0'})
                 buf = urllib.request.urlopen(req, timeout=12).read()
                 if not buf or not buf.strip():
                     return
@@ -1905,7 +1905,7 @@ class App:
             try:
                 req = urllib.request.Request(
                     base + '/books.json',
-                    headers={'User-Agent': 'Weiyue/2.8'})
+                    headers={'User-Agent': 'Weiyue/3.0'})
                 data = json.loads(urllib.request.urlopen(
                     req, timeout=12).read().decode('utf-8'))
                 sig = self._cloud_books_signature(data)
@@ -2044,7 +2044,7 @@ class App:
                 try:
                     req = urllib.request.Request(
                         base + '/books.json',
-                        headers={'User-Agent': 'Weiyue/2.8'})
+                        headers={'User-Agent': 'Weiyue/3.0'})
                     data = json.loads(urllib.request.urlopen(
                         req, timeout=15).read().decode('utf-8'))
                 except Exception as e:
@@ -2154,7 +2154,7 @@ class App:
                 tmp = None
                 try:
                     req = urllib.request.Request(
-                        url, headers={'User-Agent': 'Weiyue/2.8'})
+                        url, headers={'User-Agent': 'Weiyue/3.0'})
                     buf = urllib.request.urlopen(req, timeout=30).read()
                     fd, tmp = tempfile.mkstemp(suffix='.txt',
                                                prefix='weiyue_cloud_')
@@ -2219,13 +2219,16 @@ class App:
             key = self._get_cloud_del_key(parent=win)
             if not key:
                 return
-            url = (base + '/wydel?file='
-                   + urllib.parse.quote(f) + '&key=' + urllib.parse.quote(key))
+            url = base + '/wydel'
+            body = urllib.parse.urlencode(
+                {'file': f, 'key': key}).encode('utf-8')
 
             def work():
                 try:
                     req = urllib.request.Request(
-                        url, headers={'User-Agent': 'Weiyue/2.8'})
+                        url, data=body,
+                        headers={'User-Agent': 'Weiyue/3.0',
+                                 'Content-Type': 'application/x-www-form-urlencoded'})
                     r = urllib.request.urlopen(req, timeout=15).read()
                     r = r.decode('utf-8', 'ignore').strip()
                 except Exception as e:

@@ -10,6 +10,11 @@ late at night, or English articles for listening practice, Weiyue keeps you
 company with a warm, human-like voice.
 **Free · Open source · No installation · Unzip and go.**
 
+![Weiyue main interface (Chinese)](assets/screenshot-zh.png)
+
+[![License: MIT](https://img.shields.io/github/license/yshi40198-glitch/text-reader)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/yshi40198-glitch/text-reader)](https://github.com/yshi40198-glitch/text-reader)
+
 ---
 
 ## 1. What it does for you
@@ -29,7 +34,7 @@ company with a warm, human-like voice.
 
 ## 2. Quick start (3 steps)
 
-1. Download the latest zip from **Releases** and unzip it.
+1. Download the latest release (currently **v3.0**) from **Releases** and unzip it.
 2. Double-click 「创建桌面快捷方式.bat」 to create a desktop shortcut.
 3. Open the app, choose a document, press "Read from Start".
 

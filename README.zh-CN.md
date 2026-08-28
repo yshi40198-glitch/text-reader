@@ -9,6 +9,11 @@
 练习英语听力的文章，薇阅都能用温暖的声音陪着你。
 **免费 · 开源 · 免安装 · 解压即用。**
 
+![薇阅中文主界面](assets/screenshot-zh.png)
+
+[![License: MIT](https://img.shields.io/github/license/yshi40198-glitch/text-reader)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/yshi40198-glitch/text-reader)](https://github.com/yshi40198-glitch/text-reader)
+
 ---
 
 ## 一、它能帮你做什么
@@ -28,7 +33,7 @@
 
 ## 二、快速开始（3 步上手）
 
-1. 到右侧 **Releases** 下载最新压缩包，解压。
+1. 到右侧 **Releases** 下载最新版（当前为 v3.0）压缩包，解压。
 2. 双击文件夹里的「创建桌面快捷方式.bat」，桌面出现金色羽毛图标。
 3. 双击图标打开软件，点「打开文件」选一个文档，点「从头朗读」。
 

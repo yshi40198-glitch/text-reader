@@ -50,6 +50,13 @@ since v2.7 we unify all versions with the "v" prefix.
 - Open the app in the morning and your news is one click away /
   早上打开软件，新闻一键开读
 
+### Security fixes / 安全修复（2026-08-28）
+- Cloud delete now sends the admin key in the request body instead of the URL,
+  so it no longer appears in server access logs / 云端删书密钥改为随请求体发送，
+  不再出现在网址与访问日志里
+- Tunnel configuration scripts back up config.yaml before modifying and keep
+  existing routes / 隧道配置脚本修改前自动备份，并保留原有路由
+
 ---
 
 ## [v2.7] - 2026-08

@@ -5,6 +5,8 @@ echo "===== 第 1 步：重写隧道配置为正确内容 ====="
 python3 <<'PYEOF'
 import os
 import re
+import shutil
+import datetime
 p = '/root/.cloudflared/config.yaml'
 s = open(p, encoding='utf-8').read()
 tm = re.search(r'^tunnel:\s*(\S+)', s, re.M)
@@ -32,6 +34,7 @@ new = (
     '  service: http://localhost:8080\n'
     '- service: http_status:404\n'
 ) % (tm.group(1), cred, d, d)
+shutil.copy2(p, p + '.bak-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
 open(p, 'w', encoding='utf-8').write(new)
 print('配置已重写为正确内容。')
 PYEOF
